@@ -1,5 +1,6 @@
 from Crypto.Cipher import AES
 from numpy.random import randint
+from Crypto.Util import number
 import base64
 
 
@@ -355,3 +356,40 @@ def compute_md4_padding(data):
 
     padding = b'\x80' + b'\x00'*n_zero_bytes + (msg_len*8).to_bytes(8, 'little')
     return(padding)
+
+def egcd(a,b):
+    
+    s, old_s = 0, 1
+    t, old_t = 1, 0
+    r, old_r = b, a
+    
+    while r != 0:
+        
+        q = old_r // r
+        old_r, r = r, (old_r - q*r)
+        old_s, s = s, (old_s - q*s)
+            
+    return(old_r, old_s, old_t)
+
+def invmod(a, m):
+    
+    g,x,y = egcd(a,m)
+    
+    while x < 0:
+        x += m
+        
+    return(x % m)
+
+def genRSA_keypair(keysize):
+    
+    p = number.getStrongPrime(keysize, e=3)
+    q = number.getStrongPrime(keysize, e=3)
+    
+    n = (p * q)
+
+    et = (p-1) * (q-1)
+    e = 3
+
+    d = invmod(e, et)
+    
+    return(e, d, n)
