@@ -399,3 +399,16 @@ def genRSA_keypair(keysize):
     d = invmod(e, et)
 
     return(e, d, n)
+
+
+def root(root, b):
+    
+    if b < 2:
+        return b
+    a1 = root - 1
+    c = 1
+    d = (a1 * c + b // (c ** a1)) // root
+    e = (a1 * d + b // (d ** a1)) // root
+    while c not in (d, e):
+        c, d, e = d, e, (a1 * e + b // (e ** a1)) // root
+    return min(d, e)

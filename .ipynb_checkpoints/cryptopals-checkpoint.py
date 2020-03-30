@@ -344,6 +344,7 @@ def compute_sha1_padding(data):
     padding = b'\x80' + b'\x00'*n_zero_bytes + (msg_len*8).to_bytes(8, 'big')
     return(padding)
 
+
 def compute_md4_padding(data):
 
     # Let's assume message / data is always complete bytes, no extra bits,
@@ -354,42 +355,60 @@ def compute_md4_padding(data):
     # (64 in bytes)
     n_zero_bytes = ( (56 - ( (msg_len % 64) + 1) ) % 64 )
 
-    padding = b'\x80' + b'\x00'*n_zero_bytes + (msg_len*8).to_bytes(8, 'little')
+    padding = b'\x80' + b'\x00'*n_zero_bytes + \
+              (msg_len*8).to_bytes(8, 'little')
+
     return(padding)
 
-def egcd(a,b):
-    
+
+def egcd(a, b):
+
     s, old_s = 0, 1
     t, old_t = 1, 0
     r, old_r = b, a
-    
+
     while r != 0:
-        
+
         q = old_r // r
         old_r, r = r, (old_r - q*r)
         old_s, s = s, (old_s - q*s)
-            
+
     return(old_r, old_s, old_t)
 
+
 def invmod(a, m):
-    
-    g,x,y = egcd(a,m)
-    
+
+    g, x, y = egcd(a, m)
+
     while x < 0:
         x += m
-        
+
     return(x % m)
 
+
 def genRSA_keypair(keysize):
-    
+
     p = number.getStrongPrime(keysize, e=3)
     q = number.getStrongPrime(keysize, e=3)
-    
+
     n = (p * q)
 
     et = (p-1) * (q-1)
     e = 3
 
     d = invmod(e, et)
-    
+
     return(e, d, n)
+
+
+def root(root, b):
+    
+    if b < 2:
+        return b
+    a1 = root - 1
+    c = 1
+    d = (a1 * c + b // (c ** a1)) // root
+    e = (a1 * d + b // (d ** a1)) // root
+    while c not in (d, e):
+        c, d, e = d, e, (a1 * e + b // (e ** a1)) // root
+    return min(d, e)
