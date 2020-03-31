@@ -1,4 +1,5 @@
 from Crypto.Cipher import AES
+from Crypto.Random import random
 from numpy.random import randint
 from Crypto.Util import number
 import base64
@@ -422,7 +423,7 @@ def gen_DSA_sig(x, m, p, q, g):
     r = pow(g, k, p) % q
     sha_out = sha1.SHA1(m).finish()
     sha_int = int(sha_out.hex(), 16)
-    s = (cp.invmod(k, q) * (sha_int + x*r)) % q
+    s = (invmod(k, q) * (sha_int + x*r)) % q
     
     return(r, s, k)
 
@@ -432,14 +433,14 @@ def gen_DSA_sig_given_k(x, m, p, q, g, k):
     r = pow(g, k, p) % q
     sha_out = sha1.SHA1(m).finish()
     sha_int = int(sha_out.hex(), 16)
-    s = (cp.invmod(k, q) * (sha_int + x*r)) % q
+    s = (invmod(k, q) * (sha_int + x*r)) % q
     
     return(r, s)
 
 
 def check_DSA_sig(m, y, r, s, p, g, q):
     
-    w = cp.invmod(s, q)
+    w = invmod(s, q)
     sha_out = sha1.SHA1(m).finish()
     sha_int = int(sha_out.hex(), 16)
     u1 = (sha_int * w) % q
