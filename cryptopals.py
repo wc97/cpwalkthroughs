@@ -390,8 +390,8 @@ def invmod(a, m):
 
 def genRSA_keypair(keysize):
 
-    p = number.getStrongPrime(keysize, e=3)
-    q = number.getStrongPrime(keysize, e=3)
+    p = number.getStrongPrime(keysize // 2, e=3)
+    q = number.getStrongPrime(keysize // 2, e=3)
 
     n = (p * q)
 
