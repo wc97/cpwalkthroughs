@@ -2,6 +2,7 @@ from Crypto.Cipher import AES
 from numpy.random import randint
 from Crypto.Util import number
 import base64
+import sha1
 
 
 def bitwise_xor(a, b):
@@ -412,3 +413,47 @@ def root(root, b):
     while c not in (d, e):
         c, d, e = d, e, (a1 * e + b // (e ** a1)) // root
     return min(d, e)
+
+
+def gen_DSA_sig(x, m, p, q, g):
+
+    k = random.randint(0, q-1)
+    
+    r = pow(g, k, p) % q
+    sha_out = sha1.SHA1(m).finish()
+    sha_int = int(sha_out.hex(), 16)
+    s = (cp.invmod(k, q) * (sha_int + x*r)) % q
+    
+    return(r, s, k)
+
+
+def gen_DSA_sig_given_k(x, m, p, q, g, k):
+   
+    r = pow(g, k, p) % q
+    sha_out = sha1.SHA1(m).finish()
+    sha_int = int(sha_out.hex(), 16)
+    s = (cp.invmod(k, q) * (sha_int + x*r)) % q
+    
+    return(r, s)
+
+
+def check_DSA_sig(m, y, r, s, p, g, q):
+    
+    w = cp.invmod(s, q)
+    sha_out = sha1.SHA1(m).finish()
+    sha_int = int(sha_out.hex(), 16)
+    u1 = (sha_int * w) % q
+    u2 = (r*w) % q
+    v = ((pow(g, u1, p) * pow(y, u2, p)) % p) % q
+    
+    return(v==r)
+
+
+def dsa_priv_key_from_k(m, k, r, s, q):
+
+    sha_out = sha1.SHA1(m).finish()
+    H_m = int(sha_out.hex(), 16)
+    
+    x_guess = ((((s*k) - H_m)) * invmod(r, q)) % q
+    
+    return(x_guess)
