@@ -374,9 +374,29 @@ def egcd(a, b):
         q = old_r // r
         old_r, r = r, (old_r - q*r)
         old_s, s = s, (old_s - q*s)
+        old_t, t = t, (old_t - q*t)
 
     return(old_r, old_s, old_t)
+    # return(old_r, t, s)
 
+
+def invmod2(a, n):
+
+    t, newt = 0, 1
+    r, newr = n, a
+
+    while newr != 0:
+
+        quotient = r // newr
+        t, newt = newt, t - quotient*newt
+        r, newr = newr, r - quotient*newr
+
+    if r > 1:
+        return "a is not invertible"
+    if t < 0:
+        t += n
+
+    return t
 
 def invmod(a, m):
 
@@ -404,7 +424,7 @@ def genRSA_keypair(keysize):
 
 
 def root(root, b):
-    
+
     if b < 2:
         return b
     a1 = root - 1
@@ -419,34 +439,34 @@ def root(root, b):
 def gen_DSA_sig(x, m, p, q, g):
 
     k = random.randint(0, q-1)
-    
+
     r = pow(g, k, p) % q
     sha_out = sha1.SHA1(m).finish()
     sha_int = int(sha_out.hex(), 16)
     s = (invmod(k, q) * (sha_int + x*r)) % q
-    
+
     return(r, s, k)
 
 
 def gen_DSA_sig_given_k(x, m, p, q, g, k):
-   
+
     r = pow(g, k, p) % q
     sha_out = sha1.SHA1(m).finish()
     sha_int = int(sha_out.hex(), 16)
     s = (invmod(k, q) * (sha_int + x*r)) % q
-    
+
     return(r, s)
 
 
 def check_DSA_sig(m, y, r, s, p, g, q):
-    
+
     w = invmod(s, q)
     sha_out = sha1.SHA1(m).finish()
     sha_int = int(sha_out.hex(), 16)
     u1 = (sha_int * w) % q
     u2 = (r*w) % q
     v = ((pow(g, u1, p) * pow(y, u2, p)) % p) % q
-    
+
     return(v==r)
 
 
@@ -454,7 +474,7 @@ def dsa_priv_key_from_k(m, k, r, s, q):
 
     sha_out = sha1.SHA1(m).finish()
     H_m = int(sha_out.hex(), 16)
-    
+
     x_guess = ((((s*k) - H_m)) * invmod(r, q)) % q
-    
+
     return(x_guess)
