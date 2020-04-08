@@ -159,10 +159,19 @@ def strip_PKCS7_pad(data):
         raise(ValueError('Bad PKCS#7 Padding'))
 
 
-def AESEncrypt(plaintext, key, mode='ECB', IV=[0]*16):
+def valid_PKCS7_pad(data):
+    
+    if data[-data[-1]:].count(data[-1]) == data[-1]:
+        return(True)
+    else:
+        return(False)
+    
 
-    if mode != 'CTR':
-        plaintext = PKCS7_pad(plaintext, 16)
+def AESEncrypt(plaintext, key, mode='ECB', IV=[0]*16, pad=True):
+
+    if not(mode == 'CTR') and (pad==True):
+        if not(valid_PKCS7_pad(plaintext)):
+            plaintext = PKCS7_pad(plaintext, 16)
 
     blockSize = 16
     ciphertext = b''
@@ -478,3 +487,9 @@ def dsa_priv_key_from_k(m, k, r, s, q):
     x_guess = ((((s*k) - H_m)) * invmod(r, q)) % q
 
     return(x_guess)
+
+
+def CBC_MAC(p, K, IV, pad):
+    
+    a_out = AESEncrypt(p, K, 'CBC', IV, pad)
+    return(a_out[-16:])
