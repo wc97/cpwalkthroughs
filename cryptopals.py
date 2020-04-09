@@ -170,7 +170,7 @@ def valid_PKCS7_pad(data):
 def AESEncrypt(plaintext, key, mode='ECB', IV=[0]*16, pad=True):
 
     if not(mode == 'CTR') and (pad==True):
-        if not(valid_PKCS7_pad(plaintext)):
+        if not(valid_PKCS7_pad(plaintext)) or ((len(plaintext) % 16) != 0):
             plaintext = PKCS7_pad(plaintext, 16)
 
     blockSize = 16
