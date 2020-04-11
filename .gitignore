@@ -34,3 +34,14 @@ tmp.py
 .ipynb_checkpoints/cryptopals-checkpoint.py
 __pycache__/cryptopals.cpython-37.pyc
 __pycache__/sha1.cpython-37.pyc
+.ipynb_checkpoints/46-checkpoint.ipynb
+.ipynb_checkpoints/47-working-checkpoint.ipynb
+.ipynb_checkpoints/cryptopals-checkpoint.py
+__pycache__/cryptopals.cpython-37.pyc
+__pycache__/sha1.cpython-37.pyc
+.ipynb_checkpoints/46-checkpoint.ipynb
+.ipynb_checkpoints/47-working-checkpoint.ipynb
+.ipynb_checkpoints/cryptopals-checkpoint.py
+__pycache__/cryptopals.cpython-37.pyc
+__pycache__/sha1.cpython-37.pyc
+*.pyc
