@@ -555,3 +555,86 @@ def extend_MD_collision_list(collision_list, last_h):
         new_collision_list.append(c + collision[1])
 
     return(new_collision_list, next_h)
+
+
+def generate_expandable_message(k, initial_state, block_size, original_H):
+    
+    max_msg = 2**(block_size * 8)
+    round_initial_state = initial_state
+    colliding_message = b''
+    collision_list = []
+
+    for ii in range(1, k + 1):
+
+        print(f"Processing:  ii={ii}")
+        N_blocks = 2**(k - ii) + 1
+        N_dummy_blocks = N_blocks - 1
+
+        collision_found = False
+        while not(collision_found):
+            
+            dummy_blocks = random.Random.get_random_bytes(block_size * ii)    
+            dummy_hash = MD(dummy_blocks, round_initial_state, block_size)
+
+            db = 0
+            while not(collision_found) and (db < max_msg):
+
+                last_block = db.to_bytes(block_size, 'little')
+                this_H = MD(last_block, dummy_hash, block_size)
+
+                if original_H == this_H:
+                    colliding_message = colliding_message + dummy_blocks + last_block
+                    collision_list.append(colliding_message)
+                    collision_found = True
+                    round_initial_state = this_H
+                else:
+                    db += 1
+                    
+            print('No collision found--generating new dummy values....') 
+        
+    return(collision_list, this_H)
+
+
+def find_N_to_1_collision(initial_state, N, block_size=2):
+
+    max_state = 2**(8*block_size)
+    collision_found = False
+    
+    while not(collision_found):
+        
+        single_block = random.Random.get_random_bytes(block_size)
+        single_block_hash = MD(single_block, initial_state, block_size)
+
+        dummy_data = random.Random.get_random_bytes((N-1)*block_size)
+        dummy_hash = MD(dummy_data, initial_state, block_size)
+        
+        final_block = 0
+        while final_block < max_state:
+            
+            fb_bytes = final_block.to_bytes(block_size, 'little')
+            big_hash = MD(fb_bytes, dummy_hash, block_size)
+        
+            if big_hash == single_block_hash:
+                colliding_block = dummy_data + fb_bytes
+                return([single_block, colliding_block], big_hash)
+           
+            final_block += 1
+
+            
+def generate_expandable_message2(k, initial_state, block_size):
+    
+    max_msg = 2**(block_size * 8)
+    round_initial_state = initial_state
+    colliding_message = b''
+    collision_list = []
+
+    for ii in range(1, k + 1):
+
+        print(f"Processing:  ii={ii}, N={2**(k-ii)+1}")
+        N_blocks = 2**(k - ii) + 1
+        collision_pair, output_state = \
+            find_N_to_1_collision(round_initial_state, N_blocks, block_size)
+        collision_list.append(collision_pair)
+        round_initial_state = output_state
+        
+    return(collision_list, output_state)
