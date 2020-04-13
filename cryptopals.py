@@ -493,3 +493,65 @@ def CBC_MAC(p, K, IV, pad):
     
     a_out = AESEncrypt(p, K, 'CBC', IV, pad)
     return(a_out[-16:])
+
+
+def zero_pad(m, blockSize=16):
+    
+    r = len(m) % blockSize
+    
+    if r != 0:
+        pad_length = 16 - r
+    else:
+        pad_length = 0
+    
+    padded_m = m + b'\x00'*pad_length
+    
+    return(padded_m)
+
+
+def MD(M, H, blockSize=2):
+    
+    key = zero_pad(H[:blockSize])
+    myAES = AES.new(key, AES.MODE_ECB)
+    
+    Blocks = [M[ii:ii+blockSize] for ii in range(0, len(M), blockSize)]
+    
+    for block in Blocks:
+        
+        H = myAES.encrypt(zero_pad(block))[0:blockSize]
+        myAES = AES.new(zero_pad(H), AES.MODE_ECB)
+
+    return(H[0:blockSize])
+
+
+def find_MD_collision(initial_state, block_size=2):
+    
+    collision_list = []
+    hash_list = {}
+    max_state = 2**(8*block_size)
+    for ii in range(max_state):
+        
+        block = ii.to_bytes(block_size, 'little')
+        digest = MD(block, initial_state)
+        
+        if digest in hash_list:
+            collision_list.append(block)
+            collision_list.append(hash_list[digest])
+            return(collision_list, digest)
+        else:
+            hash_list[digest] = block
+            
+    return(None)
+
+
+def extend_MD_collision_list(collision_list, last_h):
+    
+    collision, next_h = find_collision(last_h)
+    new_collision_list = []
+    
+    for c in collision_list:
+
+        new_collision_list.append(c + collision[0])
+        new_collision_list.append(c + collision[1])
+
+    return(new_collision_list, next_h)
