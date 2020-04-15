@@ -590,6 +590,7 @@ def find_N_to_1_collision(initial_state, N, block_size=2):
         
         if single_block >= max_state:
             raise(Exception('Unable to find valid collision'))
+
             
 def generate_expandable_message(k, initial_state, block_size):
     
@@ -608,3 +609,106 @@ def generate_expandable_message(k, initial_state, block_size):
         round_initial_state = output_state
         
     return(collision_list, output_state)
+
+
+def MD4(data):
+    
+    if isinstance(data, str):
+        data = data.encode()
+    
+    # Step 1:  Append padding bits.  Single 1-bit + 0-bits so that
+    #          length of message is congruent to 448 mod 512.
+    #          I'll assume we're always passed a string or bytes.
+    
+    data += b'\x80' # Hex 0x80 = 0b10000000
+    data_len = len(data) % 64
+    padding_len = (56 - data_len) % 64
+    data += b'\x00'*padding_len
+    
+    # Step 2:  Append length.  64-bit representation before padding.
+    
+    data += ((data_len-1)*8).to_bytes(8, 'little', signed=False)
+        
+    # Step 3:  Initialize MD Buffer.  
+    
+    A, B, C, D = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
+    
+    MGK_1 = 0x5a827999
+    MGK_2 = 0x6ed9eba1
+    
+    # Step 4:  Process Message in blocks of 16 32-bit words (512 bits ea)
+    
+    # Define Auxilliary Functions:
+    
+    def lrot_32(n, d):
+        # Circular rotate.  Python only natively supports non-circular shift.
+        return ( (n << d) | (n >> (32 - d)) )
+    
+    def F(X, Y, Z):         
+        return (X & Y) | (~X & Z)
+    
+    def G(X, Y, Z):
+        return (X & Y) | (X & Z) | (Y & Z)
+    
+    def H(X, Y, Z):
+        return (X ^ Y ^ Z)
+    
+    def phi(j, a, b, c, d, m_k, s):                
+        if j == 0:            
+            x = lrot_32(((a + F(b, c, d) + m_k) % 2**32), s)        
+        elif j ==  1:            
+            x = lrot_32(((a + G(b, c, d) + m_k + MGK_1) % 2**32), s)            
+        elif j == 2:            
+            x = lrot_32(((a + H(b, c, d) + m_k + MGK_2) % 2**32), s)            
+        else:            
+            raise(ValueError('Invalid j value to phi()'))        
+        return(x)
+
+    # Convert the data into 32-bit words.
+    
+    M = []
+    N = (len(data) // 64)
+    for ii in range(0, len(data), 4):
+        word = int.from_bytes(data[ii:ii+4], byteorder='little', signed=False)
+        M.append(word)
+    
+    # Run the compression algorithm.  Loop for each block of 512 bits until
+    # full message is consumed.
+    
+    for kk in range(N//16 + 1):
+        
+        X = M[16*kk:16*(kk+1)]
+        AA, BB, CC, DD = A, B, C, D
+        
+        # Round 1
+        for ii in [0, 4, 8, 12]:
+            A = phi(0, A, B, C, D, X[ii], 3) 
+            D = phi(0, D, A, B, C, X[ii+1], 7) 
+            C = phi(0, C, D, A, B, X[ii+2], 11)  
+            B = phi(0, B, C, D, A, X[ii+3], 19)
+
+        # Round 2
+        for ii in [0, 1, 2, 3]:
+            A = phi(1, A, B, C, D, X[ii], 3) 
+            D = phi(1, D, A, B, C, X[ii+4], 5) 
+            C = phi(1, C, D, A, B, X[ii+8], 9)  
+            B = phi(1, B, C, D, A, X[ii+12], 13)
+        
+        # Round 3
+        for ii in [0, 2, 1, 3]:
+            A = phi(2, A, B, C, D, X[ii], 3) 
+            D = phi(2, D, A, B, C, X[(ii+8) % 16], 9) 
+            C = phi(2, C, D, A, B, X[(ii+4) % 16], 11)  
+            B = phi(2, B, C, D, A, X[(ii+12) % 16], 15)
+        
+        A = (A + AA) % 2**32
+        B = (B + BB) % 2**32
+        C = (C + CC) % 2**32
+        D = (D + DD) % 2**32
+    
+    digest = A.to_bytes(4, 'little') + \
+             B.to_bytes(4, 'little') + \
+             C.to_bytes(4, 'little') + \
+             D.to_bytes(4, 'little')
+   
+    return(digest)
