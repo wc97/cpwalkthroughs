@@ -18,6 +18,7 @@ do_padding = False
 ctr = 0
 max_tries = 2**27
 fixA5 = True
+fixD5 = True
     
 print(f"Searching for MD4 Collisions.  Max Attempts = {max_tries}")
 #display(progress)
@@ -32,6 +33,9 @@ while not(collision_found) and ctr < max_tries:
     msg = md4.Wang_SSM_New(msg, do_padding)
     if fixA5:
         msg = md4.Wang_fixA5_2(msg, do_padding)    
+    
+    if fixD5:
+        msg = md4.Wang_fixD5(msg, do_padding)
     
     # Then, apply the differential
     msg_ = md4.Wang_Msg_Differential(msg) 

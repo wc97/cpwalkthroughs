@@ -691,25 +691,30 @@ def Wang_fixA5_2(data, do_padding=True, endianness='little'):
         M = MD4_get_words(data, endianness) 
         
     A, B, C, D = MD4_get_IVs(M)  
-        
+    
+    #print(A[0:6],B[0:6],C[0:6],D[0:6],'\n')    
+    
     A[5] = bitset(A[5], 18, bitget(C[4], 18))
     A[5] = bitset(A[5], 25, 1)
     A[5] = bitset(A[5], 26, 0)
     A[5] = bitset(A[5], 28, 1)
     A[5] = bitset(A[5], 31, 1)
     
-    M[0] = rrot_32(A[5], 3) - A[4] - G(B[4], C[4], D[4]) - MGK_1
+    M[0] = (rrot_32(A[5], 3) - A[4] - G(B[4], C[4], D[4]) - MGK_1) % 2**32
     
     A[1] = lrot_32( (A[0] + F(B[0], C[0], D[0]) + M[0]) % 2**32, 3)
     
+    # Modify M to be consistent with new A[5]...all message bytes prior to 
+    # calculation of A[5] contribute to A[5], and may need to be adjusted
     M[1] = rrot_32(D[1],  7) - D[0] - F(A[1], B[0], C[0]) % 2**32
     M[2] = rrot_32(C[1], 11) - C[0] - F(D[1], A[1], B[0]) % 2**32
     M[3] = rrot_32(B[1], 19) - B[0] - F(C[1], D[1], A[1]) % 2**32
     M[4] = rrot_32(A[2],  3) - A[1] - F(B[1], C[1], D[1]) % 2**32
         
-    # Check constraints...a5;19 = c4;19, a5;26 = 1, a5;27 = 0, a5;29 = 1, a5;32 = 1
-    #A,B,C,D = MD4_get_IVs(M)
-    
+    # Check constraints...a5;19 = c4;19, a5;26 = 1, a5;27 = 0, a5;29 = 1, 
+    # a5;32 = 1
+    A,B,C,D = MD4_get_IVs(M)
+    #print(A[0:6],B[0:6],C[0:6],D[0:6],'\n')
     #assert(bitget(A[5], 18) == bitget(C[4], 18))
     #assert(bitget(A[5], 25) == 1)
     #assert(bitget(A[5], 26) == 0)
@@ -718,7 +723,7 @@ def Wang_fixA5_2(data, do_padding=True, endianness='little'):
     
     return(MD4_get_data(M, endianness))
 
-def Wang_fix_D5(data, do_padding=True, endianness='little'):
+def Wang_fixD5(data, do_padding=True, endianness='little'):
     
     #d5;19 = a5;19,   d5;26 = b4;26,   d5;27 = b4;27,   d5;29 = b4;29,   d5;32 = b4;32
     
@@ -730,13 +735,35 @@ def Wang_fix_D5(data, do_padding=True, endianness='little'):
         M = MD4_get_words(data, endianness) 
         
     A, B, C, D = MD4_get_IVs(M)
+    #print(A[0:6],B[0:6],C[0:6],D[0:6],'\n')
     
     D[5] = bitset(D[5], 18, bitget(A[5], 18))
     D[5] = bitset(D[5], 25, bitget(B[4], 25))
     D[5] = bitset(D[5], 26, bitget(B[4], 26))
     D[5] = bitset(D[5], 28, bitget(B[4], 28))
     D[5] = bitset(D[5], 31, bitget(B[4], 31))
+    D[5] = D[5] % 2**32
+    
+    #     D[5] = lrot_32( (D[4] + G(A[5], B[4], C[4]) + M[4] + MGK_1) % 2**32, 5)
+    M[4] = (rrot_32(D[5], 5) - D[4] - G(A[5], B[4], C[4]) - MGK_1) % 2**32
+    A[2] = lrot_32( (A[1] + F(B[1], C[1], D[1]) + M[4]) % 2**32, 3) % 2**32
+    
+    M[5] = rrot_32(D[2],  7) - D[1] - F(A[2], B[1], C[1]) % 2**32
+    M[6] = rrot_32(C[2], 11) - C[1] - F(D[2], A[2], B[1]) % 2**32
+    M[7] = rrot_32(B[2], 19) - B[1] - F(C[2], D[2], A[2]) % 2**32
+    M[8] = rrot_32(A[3],  3) - A[2] - F(B[2], C[2], D[2]) % 2**32
+    
+    A,B,C,D = MD4_get_IVs(M)
+    #print(A[0:6],B[0:6],C[0:6],D[0:6])
+    
+    assert(bitget(D[5], 18) == bitget(A[5], 18))
+    assert(bitget(D[5], 25) == bitget(B[4], 25))
+    assert(bitget(D[5], 26) == bitget(B[4], 26))
+    assert(bitget(D[5], 28) == bitget(B[4], 28))
+    assert(bitget(D[5], 31) == bitget(B[4], 31))
 
+    return(MD4_get_data(M, endianness))
+    
 def run_RFC_tests():
     
     assert(MD4('').hex() == '31d6cfe0d16ae931b73c59d7e0c089c0')
